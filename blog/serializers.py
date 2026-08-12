@@ -59,3 +59,4 @@ class CommentSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("Text cannot be blank.")
         return value.strip()
+
