@@ -3,3 +3,5 @@ djangorestframework==3.18.0
 djangorestframework-simplejwt==5.5.1
 django-filter==26.1
 drf-spectacular==0.30.0
+streamlit==1.42.0
+requests==2.32.3

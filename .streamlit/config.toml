@@ -1,0 +1,9 @@
+[theme]
+# Use Streamlit's built-in Dark theme as the base
+base = "dark"
+
+# Palette tuned to match the purple/indigo header gradient
+primaryColor = "#8b5cf6"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#1a1e2a"
+textColor = "#e7e9ee"
