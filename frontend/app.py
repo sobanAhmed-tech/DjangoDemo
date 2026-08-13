@@ -4,7 +4,6 @@ from frontend.pages import home, explore, profile, notifications, settings
 
 def render_sidebar():
     with st.sidebar:
-        st.title("Instagram Clone")
         
         if st.session_state.access_token:
             st.success(f"Logged in as **{st.session_state.username}**")

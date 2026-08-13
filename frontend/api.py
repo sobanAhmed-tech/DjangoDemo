@@ -198,7 +198,8 @@ def toggle_save(post_id, is_saved):
 
 # --- Comments ---
 def fetch_comments(post_id):
-    r, err = api_request("GET", f"{API_BASE_URL}/posts/{post_id}/comments/?page_size=100", auth=False)
+    auth = bool(st.session_state.access_token)
+    r, err = api_request("GET", f"{API_BASE_URL}/posts/{post_id}/comments/?page_size=100", auth=auth)
     if err or r.status_code != 200: return []
     data = r.json()
     return data.get("results", []) if isinstance(data, dict) else data

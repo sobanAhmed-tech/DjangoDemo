@@ -118,14 +118,30 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.PrimaryKeyRelatedField(read_only=True)
     post = serializers.PrimaryKeyRelatedField(read_only=True)
     author_username = serializers.SerializerMethodField()
+    post_author_id = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ("id", "text", "author", "author_username", "post", "created_at")
+        fields = ("id", "text", "author", "author_username", "post", "post_author_id", "can_delete", "created_at")
         read_only_fields = ("id", "author", "post", "created_at")
+
+    def _user(self):
+        request = self.context.get("request")
+        return request.user if request and request.user.is_authenticated else None
 
     def get_author_username(self, obj):
         return obj.author.username
+
+    def get_post_author_id(self, obj):
+        return obj.post.author_id
+
+    def get_can_delete(self, obj):
+        """Instagram-style: comment author OR post owner can delete."""
+        user = self._user()
+        if user is None:
+            return False
+        return obj.author_id == user.id or obj.post.author_id == user.id
 
     def validate_text(self, value):
         if not value or not value.strip():

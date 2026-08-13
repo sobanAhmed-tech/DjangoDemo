@@ -125,8 +125,12 @@ def render_comments(post):
     comments = api.fetch_comments(post_id)
     
     for c in comments:
-        c_author_id = c.get('author')
-        can_delete = (st.session_state.user_id == c_author_id) or (st.session_state.user_id == post_author_id)
+        # Use server-side can_delete (Instagram-style: comment author OR post owner).
+        # Fall back to client-side check for backward compatibility.
+        can_delete = c.get('can_delete', False)
+        if not can_delete and st.session_state.user_id is not None:
+            c_author_id = c.get('author')
+            can_delete = (st.session_state.user_id == c_author_id) or (st.session_state.user_id == post_author_id)
         
         st.html(clean_html(f'''
         <div class="comment-box">

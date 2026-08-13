@@ -53,6 +53,22 @@ class CommentAPITests(APITestCase):
         response = self.client.delete(reverse("comment-detail", args=[comment.id]))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_post_owner_can_delete_others_comment_on_own_post(self):
+        """Instagram-style: the post owner can moderate (delete) any comment on their post."""
+        comment = self.post.comments.create(author=self.other_user, text="other user comment")
+        # self.user is the post owner
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(reverse("comment-detail", args=[comment.id]))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_user_can_delete_own_comment_on_others_post(self):
+        """A user can always delete their own comment, even on someone else's post."""
+        other_post = self.other_user.posts.create(title="Other's post", content="Content")
+        comment = other_post.comments.create(author=self.user, text="my comment on their post")
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(reverse("comment-detail", args=[comment.id]))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_comments_are_associated_with_requested_post(self):
         other_post = self.user.posts.create(title="Another Post", content="Second post")
         self.post.comments.create(author=self.user, text="first post comment")

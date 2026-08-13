@@ -2,7 +2,6 @@ import streamlit as st
 from frontend import api, components
 
 def render():
-    st.title("Home")
     
     # Top Friends bar
     my_id = st.session_state.user_id

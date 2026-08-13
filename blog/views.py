@@ -121,7 +121,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post = get_object_or_404(Post, pk=self.kwargs["post_id"])
-        return Comment.objects.filter(post=post).select_related("author", "post")
+        return Comment.objects.filter(post=post).select_related("author", "post", "post__author")
 
     def create(self, request, *args, **kwargs):
         post = get_object_or_404(Post, pk=self.kwargs["post_id"])
@@ -145,7 +145,10 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
 
 class CommentDetailView(generics.DestroyAPIView):
-    queryset = Comment.objects.select_related("author", "post")
+    """Delete a comment. Allowed for the comment author OR the post owner
+    (Instagram-style: post owners can moderate comments on their posts)."""
+
+    queryset = Comment.objects.select_related("author", "post", "post__author")
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated, IsCommentAuthorOrReadOnly]
     lookup_url_kwarg = "comment_id"
