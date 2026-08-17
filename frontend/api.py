@@ -100,8 +100,8 @@ def fetch_my_profile():
     if err or r.status_code != 200: return None
     return r.json()
 
-def update_my_profile(bio, allow_likes_from, allow_comments_from):
-    payload = {"bio": bio, "allow_likes_from": allow_likes_from, "allow_comments_from": allow_comments_from}
+def update_my_profile(bio, is_private, allow_likes_from, allow_comments_from):
+    payload = {"bio": bio, "is_private": is_private, "allow_likes_from": allow_likes_from, "allow_comments_from": allow_comments_from}
     r, err = api_request("PATCH", f"{API_BASE_URL}/profile/me/", auth=True, json_body=payload)
     if err or r.status_code != 200:
         st.error(f"Failed to update profile: {err or r.text}")
@@ -135,6 +135,19 @@ def fetch_mutual_friends(user_id):
     if err or r.status_code != 200: return []
     data = r.json()
     return data.get("results", []) if isinstance(data, dict) else data
+
+def fetch_follow_requests():
+    r, err = api_request("GET", f"{API_BASE_URL}/follow-requests/", auth=True)
+    if err or r.status_code != 200: return []
+    data = r.json()
+    return data.get("results", []) if isinstance(data, dict) else data
+
+def respond_follow_request(requester_id, action):
+    r, err = api_request("POST", f"{API_BASE_URL}/follow-requests/{requester_id}/", auth=True, json_body={"action": action})
+    if err or r.status_code != 200:
+        st.error(f"Failed to respond to request: {err or r.text}")
+        return False
+    return True
 
 # --- Posts ---
 def fetch_posts(page=1, search="", endpoint="/posts/"):

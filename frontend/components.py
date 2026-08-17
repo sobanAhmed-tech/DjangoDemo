@@ -56,6 +56,22 @@ def render_post_card(post, is_author=False):
     author_username = post.get("author_username", "Unknown")
     author_id = post.get("author")
     
+    mutual_friend_likes = post.get('mutual_friend_likes', [])
+    mutual_friend_comments = post.get('mutual_friend_comments', [])
+    
+    mutuals_html = ""
+    if mutual_friend_likes:
+        likes_text = f"Liked by {', '.join(mutual_friend_likes)}"
+        if post.get('like_count', 0) > len(mutual_friend_likes):
+            likes_text += f" and {post.get('like_count', 0) - len(mutual_friend_likes)} others"
+        mutuals_html += f"<div style='font-size: 0.85rem; color: #9aa3b2; margin-top: 8px;'>❤️ {likes_text}</div>"
+        
+    if mutual_friend_comments:
+        comments_text = f"Commented on by {', '.join(mutual_friend_comments)}"
+        if post.get('comment_count', 0) > len(mutual_friend_comments):
+            comments_text += f" and {post.get('comment_count', 0) - len(mutual_friend_comments)} others"
+        mutuals_html += f"<div style='font-size: 0.85rem; color: #9aa3b2; margin-top: 4px;'>💬 {comments_text}</div>"
+
     st.html(clean_html(f'''
     <div class="post-card">
         <div class="post-header">
@@ -67,6 +83,7 @@ def render_post_card(post, is_author=False):
         </div>
         <h4 style="margin: 0 0 8px 0; color: var(--text-color);">{post.get('title', '')}</h4>
         <div class="post-content">{post.get('content', '')}</div>
+        {mutuals_html}
     </div>
     '''))
 
@@ -180,7 +197,14 @@ def render_user_card(user, key_prefix=""):
     with col2:
         if st.session_state.access_token and user['id'] != st.session_state.user_id:
             is_following = user.get("is_following", False)
-            btn_label = "Unfollow" if is_following else "Follow"
-            if st.button(btn_label, key=f"{key_prefix}flw_{user['id']}", use_container_width=True):
-                if api.toggle_follow(user['id'], is_following):
-                    st.rerun()
+            has_pending = user.get("has_pending_request", False)
+            
+            if has_pending:
+                if st.button("Requested (Cancel)", key=f"{key_prefix}flw_{user['id']}", use_container_width=True):
+                    if api.toggle_follow(user['id'], True):
+                        st.rerun()
+            else:
+                btn_label = "Unfollow" if is_following else "Follow"
+                if st.button(btn_label, key=f"{key_prefix}flw_{user['id']}", use_container_width=True):
+                    if api.toggle_follow(user['id'], is_following):
+                        st.rerun()

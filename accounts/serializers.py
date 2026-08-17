@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Follow, Notification, Profile
+from .models import Follow, Notification, Profile, FollowRequest
 from .utils import are_friends, get_profile, is_following
 
 
@@ -15,6 +15,7 @@ class UserSummarySerializer(serializers.ModelSerializer):
     following_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
     is_friend = serializers.SerializerMethodField()
+    has_pending_request = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -27,6 +28,7 @@ class UserSummarySerializer(serializers.ModelSerializer):
             "following_count",
             "is_following",
             "is_friend",
+            "has_pending_request",
         )
 
     def _me(self):
@@ -53,6 +55,10 @@ class UserSummarySerializer(serializers.ModelSerializer):
         me = self._me()
         return me is not None and are_friends(me, obj)
 
+    def get_has_pending_request(self, obj):
+        me = self._me()
+        return me is not None and FollowRequest.objects.filter(requester=me, target=obj).exists()
+
 
 class ProfileMeSerializer(serializers.ModelSerializer):
     """The current user's own profile, including privacy settings."""
@@ -67,6 +73,7 @@ class ProfileMeSerializer(serializers.ModelSerializer):
         fields = (
             "username",
             "bio",
+            "is_private",
             "allow_likes_from",
             "allow_comments_from",
             "post_count",

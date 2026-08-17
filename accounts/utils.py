@@ -45,7 +45,11 @@ def can_like(actor: User, post_author: User) -> bool:
     based on the author's allow_likes_from privacy setting."""
     if actor == post_author:
         return True
-    setting = get_profile(post_author).allow_likes_from
+    profile = get_profile(post_author)
+    if profile.is_private and not is_following(actor, post_author):
+        return False
+
+    setting = profile.allow_likes_from
     if setting == Profile.PRIVACY_EVERYONE:
         return True
     if setting == Profile.PRIVACY_FRIENDS:
@@ -57,7 +61,11 @@ def can_comment(actor: User, post_author: User) -> bool:
     """Whether `actor` is allowed to comment on `post_author`'s posts."""
     if actor == post_author:
         return True
-    setting = get_profile(post_author).allow_comments_from
+    profile = get_profile(post_author)
+    if profile.is_private and not is_following(actor, post_author):
+        return False
+
+    setting = profile.allow_comments_from
     if setting == Profile.PRIVACY_EVERYONE:
         return True
     if setting == Profile.PRIVACY_FRIENDS:

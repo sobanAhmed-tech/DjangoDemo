@@ -27,13 +27,27 @@ class LoginView(TokenObtainPairView):
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.select_related("author").all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["author"]
     search_fields = ["title", "content"]
     pagination_class = StandardPageNumberPagination
+
+    def get_queryset(self):
+        qs = Post.objects.select_related("author", "author__profile").all()
+        user = self.request.user
+        if user.is_authenticated:
+            following_ids = Follow.objects.filter(follower=user).values_list("following_id", flat=True)
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(author__profile__is_private=False) |
+                Q(author=user) |
+                Q(author_id__in=following_ids)
+            )
+        else:
+            qs = qs.filter(author__profile__is_private=False)
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

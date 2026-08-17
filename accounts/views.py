@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from blog.pagination import StandardPageNumberPagination
 
-from .models import Follow, Notification
+from .models import Follow, Notification, FollowRequest
 from .serializers import NotificationSerializer, ProfileMeSerializer, UserSummarySerializer
 from .utils import are_friends, friend_ids, get_profile
 
@@ -78,20 +78,36 @@ class FollowView(APIView):
         target = get_object_or_404(User, pk=user_id)
         if target == request.user:
             return Response({"detail": "You cannot follow yourself."}, status=400)
-        _, created = Follow.objects.get_or_create(follower=request.user, following=target)
-        if created:
-            Notification.objects.create(
-                recipient=target, actor=request.user, verb=Notification.FOLLOW
+
+        target_profile = get_profile(target)
+        if target_profile.is_private:
+            if Follow.objects.filter(follower=request.user, following=target).exists():
+                return Response({"following": True, "pending": False, "is_friend": are_friends(request.user, target)})
+            
+            _, created = FollowRequest.objects.get_or_create(requester=request.user, target=target)
+            if created:
+                Notification.objects.create(
+                    recipient=target, actor=request.user, verb=Notification.FOLLOW_REQUEST
+                )
+            return Response(
+                {"following": False, "pending": True, "is_friend": are_friends(request.user, target)}
             )
-        return Response(
-            {"following": True, "is_friend": are_friends(request.user, target)}
-        )
+        else:
+            _, created = Follow.objects.get_or_create(follower=request.user, following=target)
+            if created:
+                Notification.objects.create(
+                    recipient=target, actor=request.user, verb=Notification.FOLLOW
+                )
+            return Response(
+                {"following": True, "pending": False, "is_friend": are_friends(request.user, target)}
+            )
 
     def delete(self, request, user_id):
         target = get_object_or_404(User, pk=user_id)
         Follow.objects.filter(follower=request.user, following=target).delete()
+        FollowRequest.objects.filter(requester=request.user, target=target).delete()
         return Response(
-            {"following": False, "is_friend": are_friends(request.user, target)}
+            {"following": False, "pending": False, "is_friend": are_friends(request.user, target)}
         )
 
 
@@ -151,3 +167,39 @@ class NotificationReadView(APIView):
     def post(self, request):
         updated = Notification.objects.filter(recipient=request.user, read=False).update(read=True)
         return Response({"marked_read": updated})
+
+
+class FollowRequestListView(generics.ListAPIView):
+    serializer_class = UserSummarySerializer
+    pagination_class = StandardPageNumberPagination
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        requester_ids = FollowRequest.objects.filter(target=self.request.user).values_list("requester_id", flat=True)
+        return User.objects.filter(pk__in=list(requester_ids))
+
+
+class FollowRequestActionView(APIView):
+    """Accept or reject a follow request from a specific user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, requester_id):
+        action = request.data.get("action")
+        requester = get_object_or_404(User, pk=requester_id)
+        req = FollowRequest.objects.filter(requester=requester, target=request.user).first()
+        
+        if not req:
+            return Response({"detail": "No pending request."}, status=404)
+            
+        if action == "accept":
+            Follow.objects.get_or_create(follower=requester, following=request.user)
+            req.delete()
+            Notification.objects.create(
+                recipient=requester, actor=request.user, verb=Notification.FOLLOW_ACCEPT
+            )
+            return Response({"status": "accepted"})
+        elif action == "reject":
+            req.delete()
+            return Response({"status": "rejected"})
+        else:
+            return Response({"detail": "Invalid action."}, status=400)

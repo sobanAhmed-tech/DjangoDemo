@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from accounts.utils import can_comment, can_like, get_profile, is_following
+from accounts.utils import can_comment, can_like, friend_ids, get_profile, is_following
 
 from .models import Comment, Post
 
@@ -43,6 +43,8 @@ class PostSerializer(serializers.ModelSerializer):
     is_following_author = serializers.SerializerMethodField()
     can_like = serializers.SerializerMethodField()
     can_comment = serializers.SerializerMethodField()
+    mutual_friend_likes = serializers.SerializerMethodField()
+    mutual_friend_comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -61,6 +63,8 @@ class PostSerializer(serializers.ModelSerializer):
             "is_following_author",
             "can_like",
             "can_comment",
+            "mutual_friend_likes",
+            "mutual_friend_comments",
         )
         read_only_fields = ("id", "author", "created_at")
 
@@ -101,6 +105,24 @@ class PostSerializer(serializers.ModelSerializer):
     def get_can_comment(self, obj):
         user = self._user()
         return user is not None and can_comment(user, obj.author)
+
+    def get_mutual_friend_likes(self, obj):
+        user = self._user()
+        if user is None:
+            return []
+        friends = friend_ids(user)
+        # get usernames of friends who liked this post (limit to 3)
+        likes = obj.likes.filter(user_id__in=friends).select_related('user')[:3]
+        return [like.user.username for like in likes]
+
+    def get_mutual_friend_comments(self, obj):
+        user = self._user()
+        if user is None:
+            return []
+        friends = friend_ids(user)
+        # get usernames of friends who commented on this post (limit to 3)
+        comments = obj.comments.filter(author_id__in=friends).select_related('author').distinct()[:3]
+        return [comment.author.username for comment in comments]
 
     # --- validation ---
     def validate_title(self, value):

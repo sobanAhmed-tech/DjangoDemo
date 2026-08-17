@@ -21,6 +21,7 @@ class Profile(models.Model):
         on_delete=models.CASCADE,
     )
     bio = models.TextField(blank=True, default="")
+    is_private = models.BooleanField(default=False)
     allow_likes_from = models.CharField(
         max_length=10, choices=PRIVACY_CHOICES, default=PRIVACY_EVERYONE
     )
@@ -65,16 +66,47 @@ class Follow(models.Model):
         return f"{self.follower.username} → {self.following.username}"
 
 
+class FollowRequest(models.Model):
+    """Pending request to follow a private profile."""
+
+    requester = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="sent_follow_requests", on_delete=models.CASCADE
+    )
+    target = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="received_follow_requests", on_delete=models.CASCADE
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["requester", "target"], name="unique_follow_request"
+            ),
+            models.CheckConstraint(
+                check=~models.Q(requester=models.F("target")),
+                name="prevent_self_follow_request",
+            ),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.requester.username} requests to follow {self.target.username}"
+
+
 class Notification(models.Model):
     """Activity notifications: who did what (optionally on which post)."""
 
     LIKE = "like"
     COMMENT = "comment"
     FOLLOW = "follow"
+    FOLLOW_REQUEST = "follow_request"
+    FOLLOW_ACCEPT = "follow_accept"
     VERB_CHOICES = [
         (LIKE, "liked your post"),
         (COMMENT, "commented on your post"),
         (FOLLOW, "started following you"),
+        (FOLLOW_REQUEST, "requested to follow you"),
+        (FOLLOW_ACCEPT, "accepted your follow request"),
     ]
 
     recipient = models.ForeignKey(

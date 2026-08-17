@@ -4,6 +4,23 @@ from frontend import api, components
 def render():
     st.title("Notifications")
     
+    requests = api.fetch_follow_requests()
+    if requests:
+        st.subheader(f"Follow Requests ({len(requests)})")
+        for req in requests:
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                st.write(f"**{req.get('username')}** wants to follow you.")
+            with col2:
+                if st.button("Accept", key=f"acc_{req['id']}"):
+                    if api.respond_follow_request(req['id'], "accept"):
+                        st.rerun()
+            with col3:
+                if st.button("Reject", key=f"rej_{req['id']}"):
+                    if api.respond_follow_request(req['id'], "reject"):
+                        st.rerun()
+        st.markdown("---")
+    
     notifications = api.fetch_notifications()
     if not notifications:
         st.info("You don't have any notifications yet.")

@@ -16,6 +16,8 @@ def render():
         st.subheader("Privacy")
         st.write("Control who can interact with your posts.")
         
+        is_private = st.toggle("Private Profile", value=profile.get('is_private', False), help="If enabled, only approved followers can see your posts.")
+        
         opts = {
             "everyone": "Everyone",
             "friends": "Friends only (mutual follows)",
@@ -28,5 +30,5 @@ def render():
         allow_comments = st.selectbox("Who can comment on your posts?", options=list(opts.keys()), format_func=lambda x: opts[x], index=idx_comments)
         
         if st.form_submit_button("Save Settings"):
-            if api.update_my_profile(bio, allow_likes, allow_comments):
+            if api.update_my_profile(bio, is_private, allow_likes, allow_comments):
                 st.rerun()

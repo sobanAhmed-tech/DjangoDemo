@@ -11,6 +11,8 @@ from .views import (
     SuggestedUsersView,
     UserDetailView,
     UserListView,
+    FollowRequestListView,
+    FollowRequestActionView,
 )
 
 urlpatterns = [
@@ -28,4 +30,6 @@ urlpatterns = [
     path("users/<int:user_id>/followers/", FollowersView.as_view(), name="user-followers"),
     path("users/<int:user_id>/following/", FollowingView.as_view(), name="user-following"),
     path("users/<int:user_id>/mutual-friends/", MutualFriendsView.as_view(), name="user-mutual-friends"),
+    path("follow-requests/", FollowRequestListView.as_view(), name="follow-requests-list"),
+    path("follow-requests/<int:requester_id>/", FollowRequestActionView.as_view(), name="follow-requests-action"),
 ]

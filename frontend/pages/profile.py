@@ -11,7 +11,7 @@ def render():
     if not profile:
         st.error("Failed to load profile.")
         return
-        
+    
     is_me = (user_id == st.session_state.user_id)
     
     st.markdown(f"## {components.render_avatar(profile.get('username'), 64)} {profile.get('username')}", unsafe_allow_html=True)
@@ -27,9 +27,16 @@ def render():
                 st.rerun()
         else:
             is_following = profile.get('is_following', False)
-            if st.button("Unfollow" if is_following else "Follow", use_container_width=True):
-                if api.toggle_follow(user_id, is_following):
-                    st.rerun()
+            has_pending = profile.get('has_pending_request', False)
+            
+            if has_pending:
+                if st.button("Requested (Cancel)", use_container_width=True):
+                    if api.toggle_follow(user_id, True):
+                        st.rerun()
+            else:
+                if st.button("Unfollow" if is_following else "Follow", use_container_width=True):
+                    if api.toggle_follow(user_id, is_following):
+                        st.rerun()
                     
     # Stats
     sc1, sc2, sc3 = st.columns(3)
