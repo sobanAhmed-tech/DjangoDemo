@@ -1,6 +1,6 @@
 import streamlit as st
 from frontend import state, api, styles
-from frontend.pages import home, explore, profile, notifications, settings
+from frontend.pages import home, explore, profile, notifications, settings, saved_posts
 
 def render_sidebar():
     with st.sidebar:
@@ -8,7 +8,7 @@ def render_sidebar():
         if st.session_state.access_token:
             st.success(f"Logged in as **{st.session_state.username}**")
             
-            nav_options = ["Home", "Explore", "Notifications", "Profile", "Settings"]
+            nav_options = ["Home", "Explore", "Saved Posts", "Notifications", "Profile", "Settings"]
             for opt in nav_options:
                 if st.button(f"{'➡️ ' if st.session_state.current_page == opt else ''}{opt}", use_container_width=True):
                     if opt == "Profile":
@@ -82,3 +82,8 @@ def run():
             settings.render()
         else:
             st.warning("Log in to view settings.")
+    elif page == "Saved Posts":
+        if st.session_state.access_token:
+            saved_posts.render()
+        else:
+            st.warning("Log in to view saved posts.")

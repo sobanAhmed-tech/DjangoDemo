@@ -80,7 +80,7 @@ class SavedPostsView(generics.ListAPIView):
         return (
             Post.objects.filter(saved_by__user=self.request.user)
             .select_related("author")
-            .order_by("-savedpost__created_at")
+            .order_by("-saved_by__created_at")
         )
 
 

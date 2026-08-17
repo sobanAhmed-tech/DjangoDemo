@@ -171,6 +171,15 @@ def fetch_user_posts(user_id, page=1):
     count = data.get("count", len(results)) if isinstance(data, dict) else len(results)
     return results, count, data.get("next"), data.get("previous")
 
+def fetch_saved_posts(page=1):
+    params = {"page": page, "page_size": 10}
+    r, err = api_request("GET", f"{API_BASE_URL}/posts/saved/", auth=True, params=params)
+    if err or r.status_code != 200: return [], 0, None, None
+    data = r.json()
+    results = data.get("results", []) if isinstance(data, dict) else data
+    count = data.get("count", len(results)) if isinstance(data, dict) else len(results)
+    return results, count, data.get("next"), data.get("previous")
+
 def create_post(title, content):
     r, err = api_request("POST", f"{API_BASE_URL}/posts/", json_body={"title": title, "content": content}, auth=True)
     if err:

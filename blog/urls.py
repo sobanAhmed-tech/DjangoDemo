@@ -15,7 +15,6 @@ router = DefaultRouter()
 router.register(r"posts", PostViewSet, basename="post")
 
 urlpatterns = [
-    path("", include(router.urls)),
     # Social interactions
     path("feed/", FeedView.as_view(), name="feed"),
     path("posts/saved/", SavedPostsView.as_view(), name="saved-posts"),
@@ -24,4 +23,6 @@ urlpatterns = [
     # Comments
     path("posts/<int:post_id>/comments/", CommentListCreateView.as_view(), name="comment-list-create"),
     path("comments/<int:comment_id>/", CommentDetailView.as_view(), name="comment-detail"),
+    
+    path("", include(router.urls)),
 ]
