@@ -101,6 +101,8 @@ class Notification(models.Model):
     FOLLOW = "follow"
     FOLLOW_REQUEST = "follow_request"
     FOLLOW_ACCEPT = "follow_accept"
+
+    
     VERB_CHOICES = [
         (LIKE, "liked your post"),
         (COMMENT, "commented on your post"),

@@ -8,3 +8,6 @@ class AccountsConfig(AppConfig):
     def ready(self):
         # Wire the signal that auto-creates a Profile for new users.
         from . import signals  # noqa: F401
+
+
+
